@@ -1,39 +1,3 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from .models import FitnessClass, Booking
-from .serializers import FitnessClassSerializer, BookingSerializer
-from django.utils import timezone
-
-class FitnessClassList(APIView):
-    def get(self, request):
-        try:
-            classes = FitnessClass.objects.filter(date_time__gte=timezone.now()).order_by('date_time')
-            serializer = FitnessClassSerializer(classes, many=True)
-            return Response(serializer.data)
-        except Exception:
-            return Response({"error": "Failed to fetch fitness classes"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
-    def post(self, request):
-        try:
-            serializer = FitnessClassSerializer(data=request.data)
-            if serializer.is_valid():
-                fitness_class = serializer.save()
-                return Response(FitnessClassSerializer(fitness_class).data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except Exception:
-            return Response({"error": "Failed to create fitness class"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-class BookingCreate(APIView):
-    def post(self, request):
-        try:
-            serializer = BookingSerializer(data=request.data)
-            if serializer.is_valid():
-                booking = serializer.save()
-                return Response(BookingSerializer(booking).data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except Exception:
-            return Response({"error": "Failed to create booking"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
