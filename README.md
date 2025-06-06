@@ -24,13 +24,13 @@ Clients can view upcoming classes, book a spot, and see their bookings.
 
 ## Setup Instructions
 
-### 1. Clone the repo
+1 Clone the Repo
 
 ```bash
 git clone https://github.com/danishahmad479/Omnify.git
 cd OMNIFY
 
-2. **Create and activate a virtual environment** 
+2. Create and activate a virtual environment
 
 
 python -m venv venv
@@ -47,7 +47,7 @@ python manage.py makemigrations
 python manage.py migrate
 
 
-Sample Postman requests
+5. Sample Postman requests
 
 GET /classes/
 
