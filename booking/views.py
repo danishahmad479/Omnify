@@ -22,6 +22,29 @@ class FitnessClassList(APIView):
     
     def post(self, request):
         try:
+            required_fields = ['name', 'date_time', 'instructor', 'total_slots', 'available_slots']
+            for field in required_fields:
+                if field not in request.data:
+                    logger.warning(f"Missing field in class creation: {field}")
+                    return Response(
+                        {"error": f"'{field}' is required."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+            # Check for duplicate
+            exists = FitnessClass.objects.filter(
+                name=request.data.get("name"),
+                date_time=request.data.get("date_time"),
+                instructor=request.data.get("instructor")
+            ).exists()
+
+            if exists:
+                logger.warning("Duplicate class creation attempt")
+                return Response(
+                    {"error": "A class with the same name, date/time, and instructor already exists."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
             serializer = FitnessClassSerializer(data=request.data)
             if serializer.is_valid():
                 fitness_class = serializer.save()
@@ -36,13 +59,48 @@ class FitnessClassList(APIView):
 class BookingCreate(APIView):
     def post(self, request):
         try:
+            required_fields = ['fitness_class', 'client_name', 'client_email']
+            for field in required_fields:
+                if field not in request.data:
+                    logger.warning(f"Missing field in booking request: {field}")
+                    return Response(
+                        {"error": f"'{field}' is required."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
             serializer = BookingSerializer(data=request.data)
             if serializer.is_valid():
+                fitness_class = serializer.validated_data['fitness_class']
+                client_email = serializer.validated_data['client_email']
+
+                # Check if already booked
+                already_booked = Booking.objects.filter(
+                    fitness_class=fitness_class,
+                    client_email=client_email
+                ).exists()
+
+                if already_booked:
+                    logger.warning(f"Duplicate booking attempt by {client_email} for class {fitness_class.name}")
+                    return Response(
+                        {"error": "You have already booked this class."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                # Check for slot availability
+                if fitness_class.available_slots <= 0:
+                    logger.warning(f"Overbooking attempt for class: {fitness_class.name}")
+                    return Response(
+                        {"error": "No available slots left for this class."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
                 booking = serializer.save()
                 logger.info(f"Booking created for {booking.client_name} in class {booking.fitness_class.name}")
                 return Response(BookingSerializer(booking).data, status=status.HTTP_201_CREATED)
+
             logger.warning(f"Booking creation failed validation: {serializer.errors}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         except Exception as e:
             logger.error(f"Failed to create booking: {e}", exc_info=True)
             return Response({"error": "Failed to create booking"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
