@@ -98,14 +98,3 @@ class BookingListByEmail(APIView):
             logger.error(f"Failed to fetch bookings: {e}", exc_info=True)
             return Response({"error": "Failed to fetch bookings"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class BookingListByEmail(APIView):
-    def get(self, request):
-        try:
-            email = request.query_params.get('email')
-            if not email:
-                return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
-            bookings = Booking.objects.filter(client_email=email)
-            serializer = BookingSerializer(bookings, many=True)
-            return Response(serializer.data)
-        except Exception:
-            return Response({"error": "Failed to fetch bookings"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
